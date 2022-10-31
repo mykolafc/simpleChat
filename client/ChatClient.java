@@ -79,6 +79,27 @@ public class ChatClient extends AbstractClient
   }
   
   /**
+   * This method terminates the client once the server has stopped
+   */
+  public void connectionClosed() 
+  {
+	  clientUI.display("Server has stopped. Terminating client.");
+	  quit();
+  }
+  
+  /**
+   * This method terminates the client when an exception is thrown by its thread
+   * 
+   * @param exception The exception thrown by the server thread.
+   */
+  public void connectionException(java.lang.Exception exception) 
+  {
+	  clientUI.display("Server has failed. Terminating client.");
+	  System.out.println(exception.toString());
+	  quit();
+  }
+  
+  /**
    * This method terminates the client.
    */
   public void quit()
