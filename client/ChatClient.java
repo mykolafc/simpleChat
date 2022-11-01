@@ -26,6 +26,9 @@ public class ChatClient extends AbstractClient
    * the display method in the client.
    */
   ChatIF clientUI; 
+  
+  String userID;
+ 
 
   
   //Constructors ****************************************************
@@ -38,12 +41,14 @@ public class ChatClient extends AbstractClient
    * @param clientUI The interface type variable.
    */
   
-  public ChatClient(String host, int port, ChatIF clientUI) 
+  public ChatClient(String id, String host, int port, ChatIF clientUI) 
     throws IOException 
   {
     super(host, port); //Call the superclass constructor
+    this.userID = id;
     this.clientUI = clientUI;
     openConnection();
+	this.sendToServer("#login "+userID);
   }
 
   
@@ -66,25 +71,91 @@ public class ChatClient extends AbstractClient
    */
   public void handleMessageFromClientUI(String message)
   {
-    try
-    {
-      sendToServer(message);
-    }
-    catch(IOException e)
-    {
-      clientUI.display
-        ("Could not send message to server.  Terminating client.");
-      quit();
-    }
+	  if(message.charAt(0)!='#') {
+	    try
+	    {
+	      sendToServer(message);
+	    }
+	    catch(IOException e)
+	    {
+	      clientUI.display
+	        ("Could not send message to server.  Terminating client.");
+	      quit();
+	    }
+	  }
+	  else 
+	  {
+		handleCommand(message);
+	  }
   }
   
+  
+  public void handleCommand(String message) 
+  {
+	  if(message.startsWith("#sethost ")) {
+		  String host = message.split(" ")[1];
+		  setHost(host);
+	  }
+	  else if(message.startsWith("#setport ")) {
+		  int port = Integer.parseInt(message.split(" ")[1]);
+		  setPort(port);
+	  }
+	  else if(message.startsWith("#login"))
+	  {
+		  try {
+			  String login = message.split(" ")[1];
+			  userID = login;
+			  openConnection();
+			  this.sendToServer("#login "+login);
+		  }catch(Exception e) {
+			  clientUI.display("Couldn't log in.");
+		  }
+		  
+	  }
+	  else {
+		  switch(message) {
+		  case "#quit":
+			  clientUI.display("Quitting...");
+			  quit();
+			  break;
+		  case "#logoff":
+			  try {
+				  clientUI.display("Logging off...");
+				  this.closeConnection();
+				  break;
+			  }
+			  catch(Exception e)
+			  {
+				  clientUI.display("Couldn't log off.");
+				  break;
+			  }
+		  case "#gethost":
+			  clientUI.display(getHost());
+			  break;
+			  
+		  case "#getport":
+			  clientUI.display(String.valueOf(getPort()));
+			  break;
+			  
+		  default:
+			  clientUI.display("Unknown command.");
+			  break;
+			  
+		  }
+		  
+			  
+	  }
+  }
   /**
    * This method terminates the client once the server has stopped
    */
   public void connectionClosed() 
   {
-	  clientUI.display("Server has stopped. Terminating client.");
-	  quit();
+	  clientUI.display("Connection to server has been closed.");
+  }
+  
+  public String getUserID() {
+	  return userID;
   }
   
   /**
@@ -94,9 +165,7 @@ public class ChatClient extends AbstractClient
    */
   public void connectionException(java.lang.Exception exception) 
   {
-	  clientUI.display("Server has failed. Terminating client.");
-	  System.out.println(exception.toString());
-	  quit();
+	  clientUI.display("The server has shut down.");
   }
   
   /**
